@@ -21,9 +21,17 @@ class DeskManager {
         this.randomizeBtn = document.getElementById('randomizeBtn');
         this.resetBtn = document.getElementById('resetBtn');
         
-        // 상태 정보 요소들
+        // 상태 정보 요소들 - 오류 방지
         this.currentDeskCountElement = document.getElementById('currentDeskCount');
         this.currentStudentCountElement = document.getElementById('currentStudentCount');
+        
+        // 디버깅: 요소가 제대로 찾아졌는지 확인
+        if (!this.currentDeskCountElement || !this.currentStudentCountElement) {
+            console.error('상태 정보 요소를 찾을 수 없습니다:', {
+                deskCount: !!this.currentDeskCountElement,
+                studentCount: !!this.currentStudentCountElement
+            });
+        }
         
         // 배치 방식 선택
         this.individualBtn = document.getElementById('individualBtn');
@@ -54,6 +62,9 @@ class DeskManager {
         
         // 초기 상태 정보 업데이트
         this.updateStatusInfo();
+        
+        // 디버깅: 초기화 완료 로그
+        console.log('DeskManager 초기화 완료');
     }
     
     createInitialTeacherDesk() {
@@ -967,6 +978,12 @@ class DeskManager {
 
     // 상태 정보 업데이트
     updateStatusInfo() {
+        // 요소가 없으면 업데이트하지 않음
+        if (!this.currentDeskCountElement || !this.currentStudentCountElement) {
+            console.warn('상태 정보 요소가 없어 업데이트를 건너뜁니다.');
+            return;
+        }
+        
         // 책상 수 업데이트
         this.currentDeskCountElement.textContent = this.deskCount;
         
@@ -991,6 +1008,9 @@ class DeskManager {
         }
         
         this.currentStudentCountElement.textContent = studentCount;
+        
+        // 디버깅: 업데이트 로그
+        console.log('상태 정보 업데이트:', { deskCount: this.deskCount, studentCount });
     }
 }
 
