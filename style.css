@@ -385,6 +385,10 @@ footer {
     text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
 }
 
+footer p {
+    margin: 5px 0;
+}
+
 /* 반응형 디자인 */
 @media (max-width: 768px) {
     .container {
