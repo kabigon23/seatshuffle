@@ -21,6 +21,10 @@ class DeskManager {
         this.randomizeBtn = document.getElementById('randomizeBtn');
         this.resetBtn = document.getElementById('resetBtn');
         
+        // 상태 정보 요소들
+        this.currentDeskCountElement = document.getElementById('currentDeskCount');
+        this.currentStudentCountElement = document.getElementById('currentStudentCount');
+        
         // 배치 방식 선택
         this.individualBtn = document.getElementById('individualBtn');
         this.groupBtn = document.getElementById('groupBtn');
@@ -47,6 +51,9 @@ class DeskManager {
         
         // 페이지 로드 시 자동으로 교탁 생성
         this.createInitialTeacherDesk();
+        
+        // 초기 상태 정보 업데이트
+        this.updateStatusInfo();
     }
     
     createInitialTeacherDesk() {
@@ -138,6 +145,7 @@ class DeskManager {
         // 책상 재생성 (교탁은 유지)
         this.createDesks();
         this.validateInput();
+        this.updateStatusInfo();
     }
     
     updateDeskInfo() {
@@ -168,12 +176,15 @@ class DeskManager {
         
         // 검증 실행
         this.validateInput();
+        this.updateStatusInfo();
     }
     
     validateInput() {
         if (this.inputMode === 'number') {
+            this.updateStatusInfo();
             return this.validateAttendanceNumbers();
         } else {
+            this.updateStatusInfo();
             return this.validateNameList();
         }
     }
@@ -349,10 +360,16 @@ class DeskManager {
         const groupRows = 2;
         const totalGroups = 6;
         const totalDesks = this.deskCount;
-        const groupWidth = groupCols * deskWidth + (groupCols - 1) * spacing;
-        const groupHeight = groupRows * deskHeight + (groupRows - 1) * spacing;
-        const groupSpacing = 40;
-        const rowSpacing = 60;
+        
+        // 모둠 내부 간격을 줄임
+        const innerSpacing = 10; // 모둠 내부 책상 간격
+        const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
+        const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
+        
+        // 모둠 간 간격을 늘림
+        const groupSpacing = 60; // 모둠 간 가로 간격
+        const rowSpacing = 80;   // 모둠 간 세로 간격
+        
         const groupsPerRow = 2;
         const totalWidth = groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing;
         const startX = (classroomRect.width - totalWidth) / 2;
@@ -368,8 +385,8 @@ class DeskManager {
                         const desk = document.createElement('div');
                         desk.className = 'desk';
                         desk.dataset.index = deskIndex;
-                        const x = groupStartX + deskCol * (deskWidth + spacing);
-                        const y = rowStartY + deskRow * (deskHeight + spacing);
+                        const x = groupStartX + deskCol * (deskWidth + innerSpacing);
+                        const y = rowStartY + deskRow * (deskHeight + innerSpacing);
                         desk.style.left = x + 'px';
                         desk.style.top = y + 'px';
                         this.classroom.appendChild(desk);
@@ -798,10 +815,16 @@ class DeskManager {
     repositionTeamLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
         const groupCols = 2;
         const groupRows = 2;
-        const groupWidth = groupCols * deskWidth + (groupCols - 1) * spacing;
-        const groupHeight = groupRows * deskHeight + (groupRows - 1) * spacing;
-        const groupSpacing = 40;
-        const rowSpacing = 60;
+        
+        // 모둠 내부 간격을 줄임
+        const innerSpacing = 10; // 모둠 내부 책상 간격
+        const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
+        const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
+        
+        // 모둠 간 간격을 늘림
+        const groupSpacing = 60; // 모둠 간 가로 간격
+        const rowSpacing = 80;   // 모둠 간 세로 간격
+        
         const groupsPerRow = 2;
         const totalWidth = groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing;
         const startX = (classroomRect.width - totalWidth) / 2;
@@ -817,8 +840,8 @@ class DeskManager {
                     for (let deskCol = 0; deskCol < groupCols; deskCol++) {
                         const desk = this.desks[deskIndex];
                         if (desk) {
-                            const x = groupStartX + deskCol * (deskWidth + spacing);
-                            const y = rowStartY + deskRow * (deskHeight + spacing);
+                            const x = groupStartX + deskCol * (deskWidth + innerSpacing);
+                            const y = rowStartY + deskRow * (deskHeight + innerSpacing);
                             
                             desk.element.style.transition = 'all 0.5s ease';
                             desk.element.style.left = x + 'px';
@@ -859,6 +882,7 @@ class DeskManager {
             
             this.deskCount = this.desks.length;
             this.validateInput();
+            this.updateStatusInfo();
         });
     }
 
@@ -936,8 +960,37 @@ class DeskManager {
         this.addDeskContextMenuEvent(desk);
         this.deskCount = this.desks.length;
         this.validateInput();
+        this.updateStatusInfo();
         
         this.showMessage('➕ 책상이 추가되었습니다!', 'success');
+    }
+
+    // 상태 정보 업데이트
+    updateStatusInfo() {
+        // 책상 수 업데이트
+        this.currentDeskCountElement.textContent = this.deskCount;
+        
+        // 학생 수 계산 및 업데이트
+        let studentCount = 0;
+        if (this.inputMode === 'number') {
+            const lastNumber = parseInt(this.lastNumberInput.value) || 0;
+            const excludeText = this.excludeNumbersInput.value.trim();
+            let excludeNumbers = [];
+            if (excludeText) {
+                excludeNumbers = excludeText.split(',')
+                    .map(num => parseInt(num.trim()))
+                    .filter(num => !isNaN(num) && num > 0 && num <= lastNumber);
+            }
+            excludeNumbers = [...new Set(excludeNumbers)];
+            studentCount = lastNumber - excludeNumbers.length;
+        } else {
+            const nameText = this.nameListTextarea.value.trim();
+            if (nameText) {
+                studentCount = nameText.split('\n').filter(name => name.trim() !== '').length;
+            }
+        }
+        
+        this.currentStudentCountElement.textContent = studentCount;
     }
 }
 
