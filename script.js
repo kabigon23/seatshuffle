@@ -549,8 +549,8 @@ class DeskManager {
     }
     
     startDragging(deskElement, clientX, clientY) {
-        const deskIndex = parseInt(deskElement.dataset.index);
-        const desk = this.desks[deskIndex];
+        // dataset.index 대신 DOM 요소를 직접 사용하여 책상 찾기
+        const desk = this.desks.find(d => d.element === deskElement);
         
         if (!desk) return;
         
@@ -851,6 +851,12 @@ class DeskManager {
             }
             deskElement.remove();
             this.desks = this.desks.filter(d => d.element !== deskElement);
+            
+            // 남은 책상들의 dataset.index 업데이트
+            this.desks.forEach((desk, index) => {
+                desk.element.dataset.index = index;
+            });
+            
             this.deskCount = this.desks.length;
             this.validateInput();
         });
@@ -910,19 +916,23 @@ class DeskManager {
             attempts++;
         }
         
+        const newDeskIndex = this.desks.length;
         const desk = document.createElement('div');
         desk.className = 'desk';
-        desk.dataset.index = this.desks.length;
+        desk.dataset.index = newDeskIndex;
         desk.style.left = x + 'px';
         desk.style.top = y + 'px';
         this.classroom.appendChild(desk);
-        this.desks.push({
+        
+        const deskData = {
             element: desk,
             x: x,
             y: y,
             number: null,
             name: null
-        });
+        };
+        
+        this.desks.push(deskData);
         this.addDeskContextMenuEvent(desk);
         this.deskCount = this.desks.length;
         this.validateInput();
