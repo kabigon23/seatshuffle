@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>초등학교 자리바꾸기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎒 초등학교 자리바꾸기 🎒</h1>
+            <div class="controls">
+                <div class="layout-selector">
+                    <label>배치 방식</label>
+                    <div class="layout-buttons">
+                        <button id="individualBtn" class="layout-btn active">👤 개인형</button>
+                        <button id="groupBtn" class="layout-btn">👥 분단형</button>
+                        <button id="teamBtn" class="layout-btn">🏢 모둠형</button>
+                        <button id="addDeskBtn" class="add-desk-btn">➕ 책상 추가</button>
+                    </div>
+                </div>
+                
+                <div class="input-mode-selector">
+                    <label>입력 방식</label>
+                    <div class="mode-buttons">
+                        <button id="numberModeBtn" class="mode-btn active">📊 출석번호</button>
+                        <button id="nameModeBtn" class="mode-btn">👥 이름</button>
+                    </div>
+                </div>
+                
+                <div id="numberInputSection" class="attendance-input">
+                    <div class="input-group">
+                        <label for="lastNumber">마지막 출석번호</label>
+                        <input type="number" id="lastNumber" min="1" max="50" value="20" class="number-input">
+                    </div>
+                    <div class="input-group">
+                        <label for="excludeNumbers">제외할 출석번호</label>
+                        <input type="text" id="excludeNumbers" placeholder="예: 3,7,12" class="exclude-input">
+                        <small>쉼표로 구분하여 입력 (예: 3,7,12)</small>
+                    </div>
+                </div>
+                
+                <div id="nameInputSection" class="attendance-input" style="display: none;">
+                    <div class="input-group">
+                        <label for="nameList">학생 이름 목록</label>
+                        <textarea id="nameList" placeholder="한 줄에 하나씩 이름을 입력하세요&#10;예:&#10;김철수&#10;이영희&#10;박민수" class="name-textarea"></textarea>
+                        <small>한 줄에 하나씩 이름을 입력하세요</small>
+                    </div>
+                    <div class="name-controls">
+                        <button id="saveNamesBtn" class="save-btn">💾 저장</button>
+                        <button id="clearNamesBtn" class="clear-btn">🗑️ 지우기</button>
+                    </div>
+                </div>
+                
+                <button id="randomizeBtn" class="randomize-btn">🎲 자리 배치하기</button>
+                <button id="resetBtn" class="reset-btn">🔄 초기화</button>
+            </div>
+        </header>
+        
+        <main>
+            <div id="classroom" class="classroom">
+                <!-- 책상들이 여기에 동적으로 생성됩니다 -->
+            </div>
+        </main>
+        
+        <footer>
+            <p>💡 마우스로 책상을 드래그해서 위치를 바꿀 수 있어요!</p>
+        </footer>
+    </div>
+    
+    <script src="script.js"></script>
+</body>
+</html> 
