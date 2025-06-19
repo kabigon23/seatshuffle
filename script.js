@@ -127,6 +127,12 @@ class DeskManager {
         this.classroom.addEventListener('touchstart', (e) => this.handleTouchStart(e));
         document.addEventListener('touchmove', (e) => this.handleTouchMove(e));
         document.addEventListener('touchend', () => this.handleTouchEnd());
+        
+        // PDF 저장 버튼 이벤트 바인딩
+        this.downloadPdfBtn = document.getElementById('downloadPdfBtn');
+        if (this.downloadPdfBtn) {
+            this.downloadPdfBtn.addEventListener('click', () => this.downloadClassroomAsPdf());
+        }
     }
     
     switchLayout(layoutType) {
@@ -1011,6 +1017,39 @@ class DeskManager {
         
         // 디버깅: 업데이트 로그
         console.log('상태 정보 업데이트:', { deskCount: this.deskCount, studentCount });
+    }
+
+    // PDF로 저장 기능
+    async downloadClassroomAsPdf() {
+        const classroom = document.getElementById('classroom');
+        const container = document.querySelector('.container');
+        if (!classroom || !container) return;
+        const desks = classroom.querySelectorAll('.desk');
+        // 전체 배경까지 흰색으로 강제 적용
+        document.documentElement.classList.add('force-capture-bg');
+        document.body.classList.add('force-capture-bg');
+        classroom.classList.add('force-capture-bg');
+        container.classList.add('force-capture-bg');
+        desks.forEach(desk => desk.classList.add('force-capture-desk'));
+        // html2canvas로 캡처
+        const canvas = await html2canvas(classroom, {backgroundColor: '#fff'});
+        // 캡처 후 원래대로 복구
+        document.documentElement.classList.remove('force-capture-bg');
+        document.body.classList.remove('force-capture-bg');
+        classroom.classList.remove('force-capture-bg');
+        container.classList.remove('force-capture-bg');
+        desks.forEach(desk => desk.classList.remove('force-capture-desk'));
+        const imgData = canvas.toDataURL('image/png');
+        // PDF 크기 계산 (A4 기준)
+        const pdf = new window.jspdf.jsPDF({orientation: 'landscape', unit: 'mm', format: 'a4'});
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        // 이미지 비율에 맞게 크기 조정
+        const imgWidth = pageWidth;
+        const imgHeight = canvas.height * (imgWidth / canvas.width);
+        const y = (pageHeight - imgHeight) / 2;
+        pdf.addImage(imgData, 'PNG', 0, y, imgWidth, imgHeight);
+        pdf.save('자리배치.pdf');
     }
 }
 

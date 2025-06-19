@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>초등학교 자리바꾸기</title>
     <link rel="stylesheet" href="style.css">
+    <!-- html2canvas, jsPDF CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -14,7 +17,7 @@
                 <div class="header-info">
                     <div class="version-info">
                         <div class="version">v0.1</div>
-                        <div class="developer">개발자: 리자드쌤(임시 이름)</div>
+                        <div class="developer">개발자: 키위맛초코</div>
                         <div class="email">kabigond23@gmail.com</div>
                     </div>
                 </div>
@@ -64,6 +67,7 @@
                 
                 <button id="randomizeBtn" class="randomize-btn">🎲 자리 배치하기</button>
                 <button id="resetBtn" class="reset-btn">🔄 초기화</button>
+                <button id="downloadPdfBtn" class="pdf-btn">📄 PDF로 저장</button>
             </div>
         </header>
         

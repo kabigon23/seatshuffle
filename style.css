@@ -605,4 +605,46 @@ footer p {
         font-size: 0.95em !important;
         padding: 10px 12px !important;
     }
+}
+
+.force-white-bg {
+    background: #fff !important;
+}
+
+.force-capture-bg {
+    background: #fff !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    border: none !important;
+    padding: 0 !important;
+}
+
+.force-capture-desk {
+    background: #ffecd2 !important;
+    box-shadow: none !important;
+}
+
+html.force-capture-bg,
+body.force-capture-bg {
+    background: #fff !important;
+}
+
+.pdf-btn {
+    background: linear-gradient(45deg, #ff5252, #ff1744);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 12px 22px;
+    font-size: 1em;
+    font-weight: bold;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 23, 68, 0.18);
+}
+
+.pdf-btn:hover {
+    background: linear-gradient(45deg, #ff1744, #ff5252);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 23, 68, 0.28);
 } 
