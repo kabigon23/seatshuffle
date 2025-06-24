@@ -240,7 +240,8 @@ class DeskManager {
     
     validateNameList() {
         const nameText = this.nameListTextarea.value.trim();
-        const names = nameText ? nameText.split('\n').filter(name => name.trim()) : [];
+        // 개행 또는 쉼표(,) 모두를 구분자로 사용
+        const names = nameText ? nameText.split(/\n|,/).map(name => name.trim()).filter(name => name) : [];
         
         if (names.length !== this.deskCount) {
             this.showMessage(`⚠️ 경고: 이름 개수(${names.length})와 책상 개수(${this.deskCount})가 일치하지 않습니다!`, 'warning');
@@ -1009,7 +1010,8 @@ class DeskManager {
         } else {
             const nameText = this.nameListTextarea.value.trim();
             if (nameText) {
-                studentCount = nameText.split('\n').filter(name => name.trim() !== '').length;
+                // 개행 또는 쉼표(,) 모두를 구분자로 사용
+                studentCount = nameText.split(/\n|,/).map(name => name.trim()).filter(name => name).length;
             }
         }
         
