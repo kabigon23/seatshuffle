@@ -8,7 +8,8 @@ class DeskManager {
         this.inputMode = 'number'; // 'number' 또는 'name'
         this.teacherDesk = null; // 교탁 객체
         this.isDraggingTeacherDesk = false; // 교탁 드래그 상태
-        this.layoutType = 'individual'; // 'individual', 'group', 'team'
+        this.layoutType = 'individual'; // 'individual', 'group', 'team-vertical', 'team-horizontal'
+        this.appMode = localStorage.getItem('seatshuffleAppMode') || 'normal'; // 'normal' | 'gender'
         
         this.init();
     }
@@ -36,7 +37,8 @@ class DeskManager {
         // 배치 방식 선택
         this.individualBtn = document.getElementById('individualBtn');
         this.groupBtn = document.getElementById('groupBtn');
-        this.teamBtn = document.getElementById('teamBtn');
+        this.teamVerticalBtn = document.getElementById('teamVerticalBtn');
+        this.teamHorizontalBtn = document.getElementById('teamHorizontalBtn');
         
         // 입력 방식 선택
         this.numberModeBtn = document.getElementById('numberModeBtn');
@@ -53,6 +55,20 @@ class DeskManager {
         this.saveNamesBtn = document.getElementById('saveNamesBtn');
         this.clearNamesBtn = document.getElementById('clearNamesBtn');
         
+        this.maleNumbersInput = document.getElementById('maleNumbers');
+        this.femaleNumbersInput = document.getElementById('femaleNumbers');
+        this.maleNamesInput = document.getElementById('maleNames');
+        this.femaleNamesInput = document.getElementById('femaleNames');
+        this.genderNumberInputSection = document.getElementById('genderNumberInputSection');
+        this.genderNameInputSection = document.getElementById('genderNameInputSection');
+        this.statusInfoNormal = document.getElementById('statusInfoNormal');
+        this.statusInfoGender = document.getElementById('statusInfoGender');
+        
+        this.saveGenderNumbersBtn = document.getElementById('saveGenderNumbersBtn');
+        this.clearGenderNumbersBtn = document.getElementById('clearGenderNumbersBtn');
+        this.saveGenderNamesBtn = document.getElementById('saveGenderNamesBtn');
+        this.clearGenderNamesBtn = document.getElementById('clearGenderNamesBtn');
+        
         this.bindEvents();
         this.createDesks();
         this.loadNamesFromStorage(); // 저장된 이름 불러오기
@@ -65,6 +81,14 @@ class DeskManager {
         
         // 디버깅: 초기화 완료 로그
         console.log('DeskManager 초기화 완료');
+
+        this.modeToggleBtn = document.getElementById('modeToggleBtn');
+        if (this.modeToggleBtn) {
+            this.modeToggleBtn.addEventListener('click', () => this.toggleAppMode());
+            this.updateModeToggleBtn();
+        }
+
+        this.updateModeUI();
     }
     
     createInitialTeacherDesk() {
@@ -101,7 +125,8 @@ class DeskManager {
         // 배치 방식 선택 이벤트
         this.individualBtn.addEventListener('click', () => this.switchLayout('individual'));
         this.groupBtn.addEventListener('click', () => this.switchLayout('group'));
-        this.teamBtn.addEventListener('click', () => this.switchLayout('team'));
+        this.teamVerticalBtn.addEventListener('click', () => this.switchLayout('team-vertical'));
+        this.teamHorizontalBtn.addEventListener('click', () => this.switchLayout('team-horizontal'));
         this.addDeskBtn = document.getElementById('addDeskBtn');
         this.addDeskBtn.addEventListener('click', () => this.addDesk());
         
@@ -117,6 +142,22 @@ class DeskManager {
         this.nameListTextarea.addEventListener('input', () => this.validateInput());
         this.saveNamesBtn.addEventListener('click', () => this.saveNamesToStorage());
         this.clearNamesBtn.addEventListener('click', () => this.clearNames());
+
+        // 남녀 구별 모드 입력 이벤트
+        if (this.maleNumbersInput) this.maleNumbersInput.addEventListener('input', () => this.validateInput());
+        if (this.femaleNumbersInput) this.femaleNumbersInput.addEventListener('input', () => this.validateInput());
+        if (this.maleNamesInput) this.maleNamesInput.addEventListener('input', () => this.validateInput());
+        if (this.femaleNamesInput) this.femaleNamesInput.addEventListener('input', () => this.validateInput());
+        
+        if (this.saveGenderNumbersBtn) this.saveGenderNumbersBtn.addEventListener('click', () => this.saveGenderNumbersToStorage());
+        if (this.clearGenderNumbersBtn) this.clearGenderNumbersBtn.addEventListener('click', () => this.clearGenderNumbers());
+        if (this.saveGenderNamesBtn) this.saveGenderNamesBtn.addEventListener('click', () => this.saveNamesToStorage());
+        if (this.clearGenderNamesBtn) this.clearGenderNamesBtn.addEventListener('click', () => { 
+            this.maleNamesInput.value = ''; 
+            this.femaleNamesInput.value = ''; 
+            this.validateInput(); 
+            this.showMessage('🗑️ 이름 목록을 지웠습니다!', 'info');
+        });
         
         // 드래그 이벤트
         this.classroom.addEventListener('mousedown', (e) => this.handleMouseDown(e));
@@ -133,6 +174,15 @@ class DeskManager {
         if (this.downloadPdfBtn) {
             this.downloadPdfBtn.addEventListener('click', () => this.downloadClassroomAsPdf());
         }
+
+        this.saveLayoutBtn = document.getElementById('saveLayoutBtn');
+        this.loadLayoutBtn = document.getElementById('loadLayoutBtn');
+        if (this.saveLayoutBtn) {
+            this.saveLayoutBtn.addEventListener('click', () => this.saveLayoutToStorage());
+        }
+        if (this.loadLayoutBtn) {
+            this.loadLayoutBtn.addEventListener('click', () => this.loadLayoutFromStorage());
+        }
     }
     
     switchLayout(layoutType) {
@@ -141,7 +191,8 @@ class DeskManager {
         // 버튼 활성화 상태 변경
         this.individualBtn.classList.toggle('active', layoutType === 'individual');
         this.groupBtn.classList.toggle('active', layoutType === 'group');
-        this.teamBtn.classList.toggle('active', layoutType === 'team');
+        this.teamVerticalBtn.classList.toggle('active', layoutType === 'team-vertical');
+        this.teamHorizontalBtn.classList.toggle('active', layoutType === 'team-horizontal');
         
         // 책상 개수 업데이트
         switch (layoutType) {
@@ -151,7 +202,8 @@ class DeskManager {
             case 'group':
                 this.deskCount = 18;
                 break;
-            case 'team':
+            case 'team-vertical':
+            case 'team-horizontal':
                 this.deskCount = 24;
                 break;
         }
@@ -174,35 +226,83 @@ class DeskManager {
             case 'group':
                 deskInfo.textContent = '📚 책상 배치: 분단형 (총 18개)';
                 break;
-            case 'team':
-                deskInfo.textContent = '📚 책상 배치: 모둠형 (총 24개)';
+            case 'team-vertical':
+                deskInfo.textContent = '📚 책상 배치: 모둠형(세로, 2x2 3행2열, 총 24개)';
+                break;
+            case 'team-horizontal':
+                deskInfo.textContent = '📚 책상 배치: 모둠형(가로, 2x2 2행3열, 총 24개)';
                 break;
         }
     }
     
     switchInputMode(mode) {
         this.inputMode = mode;
-        
-        // 버튼 활성화 상태 변경
         this.numberModeBtn.classList.toggle('active', mode === 'number');
         this.nameModeBtn.classList.toggle('active', mode === 'name');
-        
-        // 입력 섹션 표시/숨김
-        this.numberInputSection.style.display = mode === 'number' ? 'flex' : 'none';
-        this.nameInputSection.style.display = mode === 'name' ? 'flex' : 'none';
-        
-        // 검증 실행
+        this.updateModeUI();
         this.validateInput();
         this.updateStatusInfo();
     }
     
+    updateModeUI() {
+        if (this.appMode === 'gender') {
+            this.numberInputSection.style.display = 'none';
+            this.nameInputSection.style.display = 'none';
+            this.genderNumberInputSection.style.display = this.inputMode === 'number' ? 'flex' : 'none';
+            this.genderNameInputSection.style.display = this.inputMode === 'name' ? 'flex' : 'none';
+            this.statusInfoNormal.style.display = 'none';
+            this.statusInfoGender.style.display = '';
+            // 안내문 제어
+            const footerNormal = document.getElementById('footerNormal');
+            const footerGender = document.getElementById('footerGender');
+            if (footerNormal) footerNormal.style.display = 'none';
+            if (footerGender) footerGender.style.display = '';
+        } else {
+            this.numberInputSection.style.display = this.inputMode === 'number' ? 'flex' : 'none';
+            this.nameInputSection.style.display = this.inputMode === 'name' ? 'flex' : 'none';
+            this.genderNumberInputSection.style.display = 'none';
+            this.genderNameInputSection.style.display = 'none';
+            this.statusInfoNormal.style.display = '';
+            this.statusInfoGender.style.display = 'none';
+            // 안내문 제어
+            const footerNormal = document.getElementById('footerNormal');
+            const footerGender = document.getElementById('footerGender');
+            if (footerNormal) footerNormal.style.display = '';
+            if (footerGender) footerGender.style.display = 'none';
+        }
+    }
+    
     validateInput() {
-        if (this.inputMode === 'number') {
+        if (this.appMode === 'gender') {
+            let maleCount = 0, femaleCount = 0;
+            if (this.inputMode === 'number') {
+                const males = this.maleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+                const females = this.femaleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+                maleCount = males.length;
+                femaleCount = females.length;
+            } else {
+                const males = this.maleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                const females = this.femaleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                maleCount = males.length;
+                femaleCount = females.length;
+            }
+            const maleDeskCount = this.desks.filter(d => d.element.classList.contains('desk-male')).length;
+            const femaleDeskCount = this.desks.filter(d => d.element.classList.contains('desk-female')).length;
+            // 경고 및 버튼 비활성화
+            if (maleCount !== maleDeskCount || femaleCount !== femaleDeskCount) {
+                this.showMessage(`⚠️ 남학생(${maleCount})/남자책상(${maleDeskCount}), 여학생(${femaleCount})/여자책상(${femaleDeskCount}) 수가 일치하지 않습니다!`, 'warning', true);
+                this.randomizeBtn.disabled = true;
+                this.randomizeBtn.style.opacity = '0.5';
+            } else {
+                this.showMessage('✅ 남학생/여학생 수와 책상 수가 일치합니다!', 'success');
+                this.randomizeBtn.disabled = false;
+                this.randomizeBtn.style.opacity = '1';
+            }
             this.updateStatusInfo();
-            return this.validateAttendanceNumbers();
+            return { maleCount, femaleCount, maleDeskCount, femaleDeskCount };
         } else {
             this.updateStatusInfo();
-            return this.validateNameList();
+            return this.inputMode === 'number' ? this.validateAttendanceNumbers() : this.validateNameList();
         }
     }
     
@@ -226,7 +326,7 @@ class DeskManager {
         
         // 책상 수와 비교
         if (actualAttendanceCount !== this.deskCount) {
-            this.showMessage(`⚠️ 경고: 출석번호 개수(${actualAttendanceCount})와 책상 개수(${this.deskCount})가 일치하지 않습니다!`, 'warning');
+            this.showMessage(`⚠️ 경고: 출석번호 개수(${actualAttendanceCount})와 책상 개수(${this.deskCount})가 일치하지 않습니다!`, 'warning', true);
             this.randomizeBtn.disabled = true;
             this.randomizeBtn.style.opacity = '0.5';
         } else {
@@ -244,7 +344,7 @@ class DeskManager {
         const names = nameText ? nameText.split(/\n|,/).map(name => name.trim()).filter(name => name) : [];
         
         if (names.length !== this.deskCount) {
-            this.showMessage(`⚠️ 경고: 이름 개수(${names.length})와 책상 개수(${this.deskCount})가 일치하지 않습니다!`, 'warning');
+            this.showMessage(`⚠️ 경고: 이름 개수(${names.length})와 책상 개수(${this.deskCount})가 일치하지 않습니다!`, 'warning', true);
             this.randomizeBtn.disabled = true;
             this.randomizeBtn.style.opacity = '0.5';
         } else {
@@ -257,19 +357,48 @@ class DeskManager {
     }
     
     saveNamesToStorage() {
-        const names = this.nameListTextarea.value.trim();
-        localStorage.setItem('classroomNames', names);
+        if (this.appMode === 'gender') {
+            const maleNames = this.maleNamesInput.value.trim();
+            const femaleNames = this.femaleNamesInput.value.trim();
+            localStorage.setItem('classroomNames_gender', JSON.stringify({ maleNames, femaleNames }));
+        } else {
+            const names = this.nameListTextarea.value.trim();
+            localStorage.setItem('classroomNames', names);
+        }
         this.showMessage('💾 이름 목록이 저장되었습니다!', 'success');
     }
     
     loadNamesFromStorage() {
-        const savedNames = localStorage.getItem('classroomNames');
-        if (savedNames !== null) {
-            this.nameListTextarea.value = savedNames;
-            this.showMessage('📂 저장된 이름 목록을 불러왔습니다!', 'success');
-            this.validateInput();
+        if (this.appMode === 'gender') {
+            const savedNumbers = localStorage.getItem('classroomNumbers_gender');
+            if (savedNumbers) {
+                try {
+                    const { maleNumbers, femaleNumbers } = JSON.parse(savedNumbers);
+                    this.maleNumbersInput.value = maleNumbers || '';
+                    this.femaleNumbersInput.value = femaleNumbers || '';
+                } catch (e) { console.error('남녀 출석번호 불러오기 오류', e); }
+            }
+            // 이름
+            const savedData = localStorage.getItem('classroomNames_gender');
+            if (savedData) {
+                try {
+                    const { maleNames, femaleNames } = JSON.parse(savedData);
+                    this.maleNamesInput.value = maleNames || '';
+                    this.femaleNamesInput.value = femaleNames || '';
+                    this.showMessage('📂 저장된 이름 목록을 불러왔습니다!', 'success');
+                    this.validateInput();
+                } catch (e) {
+                    console.error('이름 불러오기 오류', e);
+                }
+            }
+        } else {
+            const savedNames = localStorage.getItem('classroomNames');
+            if (savedNames !== null) {
+                this.nameListTextarea.value = savedNames;
+                this.showMessage('📂 저장된 이름 목록을 불러왔습니다!', 'success');
+                this.validateInput();
+            }
         }
-        // 저장된 데이터가 없으면 조용히 넘어감 (에러 메시지 없음)
     }
     
     clearNames() {
@@ -282,16 +411,13 @@ class DeskManager {
         // 책상만 삭제 (교탁은 남김)
         this.classroom.querySelectorAll('.desk').forEach(d => d.remove());
         this.desks = [];
-        
         const classroomRect = this.classroom.getBoundingClientRect();
         const deskWidth = 80;
         const deskHeight = 60;
         const padding = 20;
         const spacing = 20; // 책상 간 간격
-        
         // 교탁 바로 아래 위치 (교탁 높이 80px + 간격 40px로 증가)
         const topOffset = 140;
-        
         switch (this.layoutType) {
             case 'individual':
                 this.createIndividualLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset);
@@ -299,8 +425,11 @@ class DeskManager {
             case 'group':
                 this.createGroupLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset);
                 break;
-            case 'team':
-                this.createTeamLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset);
+            case 'team-vertical':
+                this.createTeamLayoutVertical(classroomRect, deskWidth, deskHeight, spacing, topOffset);
+                break;
+            case 'team-horizontal':
+                this.createTeamLayoutHorizontal(classroomRect, deskWidth, deskHeight, spacing, topOffset);
                 break;
         }
     }
@@ -322,6 +451,15 @@ class DeskManager {
             const y = startY + row * (deskHeight + spacing);
             desk.style.left = x + 'px';
             desk.style.top = y + 'px';
+            // 남녀모드 성별 패턴 적용
+            if (this.appMode === 'gender') {
+                // 홀수줄: 남 여 남 여 남 / 짝수줄: 여 남 여 남 여
+                if (row % 2 === 0) {
+                    desk.classList.add(col % 2 === 0 ? 'desk-male' : 'desk-female');
+                } else {
+                    desk.classList.add(col % 2 === 0 ? 'desk-female' : 'desk-male');
+                }
+            }
             this.classroom.appendChild(desk);
             this.desks.push({
                 element: desk,
@@ -358,6 +496,10 @@ class DeskManager {
                     const y = startY + row * (deskHeight + spacing);
                     desk.style.left = x + 'px';
                     desk.style.top = y + 'px';
+                    // 남녀모드 성별 패턴 적용: 왼쪽줄 남, 오른쪽줄 여
+                    if (this.appMode === 'gender') {
+                        desk.classList.add(col === 0 ? 'desk-male' : 'desk-female');
+                    }
                     this.classroom.appendChild(desk);
                     this.desks.push({
                         element: desk,
@@ -373,21 +515,15 @@ class DeskManager {
         }
     }
     
-    createTeamLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
+    createTeamLayoutVertical(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
         const groupCols = 2;
         const groupRows = 2;
         const totalGroups = 6;
-        const totalDesks = this.deskCount;
-        
-        // 모둠 내부 간격을 줄임
-        const innerSpacing = 10; // 모둠 내부 책상 간격
+        const innerSpacing = 10;
         const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
         const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
-        
-        // 모둠 간 간격을 늘림
-        const groupSpacing = 60; // 모둠 간 가로 간격
-        const rowSpacing = 80;   // 모둠 간 세로 간격
-        
+        const groupSpacing = 60;
+        const rowSpacing = 80;
         const groupsPerRow = 2;
         const totalWidth = groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing;
         const startX = (classroomRect.width - totalWidth) / 2;
@@ -399,7 +535,7 @@ class DeskManager {
                 const groupStartX = startX + groupInRow * (groupWidth + groupSpacing);
                 for (let deskRow = 0; deskRow < groupRows; deskRow++) {
                     for (let deskCol = 0; deskCol < groupCols; deskCol++) {
-                        if (deskIndex >= totalDesks) return;
+                        if (deskIndex >= this.deskCount) return;
                         const desk = document.createElement('div');
                         desk.className = 'desk';
                         desk.dataset.index = deskIndex;
@@ -407,6 +543,58 @@ class DeskManager {
                         const y = rowStartY + deskRow * (deskHeight + innerSpacing);
                         desk.style.left = x + 'px';
                         desk.style.top = y + 'px';
+                        // 남녀모드 성별 패턴 적용: 왼쪽 남, 오른쪽 여
+                        if (this.appMode === 'gender') {
+                            desk.classList.add(deskCol === 0 ? 'desk-male' : 'desk-female');
+                        }
+                        this.classroom.appendChild(desk);
+                        this.desks.push({
+                            element: desk,
+                            x: x,
+                            y: y,
+                            number: null,
+                            name: null
+                        });
+                        this.addDeskContextMenuEvent(desk);
+                        deskIndex++;
+                    }
+                }
+            }
+        }
+    }
+    
+    createTeamLayoutHorizontal(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
+        const groupCols = 2;
+        const groupRows = 2;
+        const totalGroups = 6;
+        const innerSpacing = 10;
+        const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
+        const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
+        const groupSpacing = 60;
+        const rowSpacing = 80;
+        const groupsPerRow = 3;
+        const totalWidth = groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing;
+        const startX = (classroomRect.width - totalWidth) / 2;
+        const startY = topOffset;
+        let deskIndex = 0;
+        for (let row = 0; row < 2; row++) {
+            const rowStartY = startY + row * (groupHeight + rowSpacing);
+            for (let groupInRow = 0; groupInRow < 3; groupInRow++) {
+                const groupStartX = startX + groupInRow * (groupWidth + groupSpacing);
+                for (let deskRow = 0; deskRow < groupRows; deskRow++) {
+                    for (let deskCol = 0; deskCol < groupCols; deskCol++) {
+                        if (deskIndex >= this.deskCount) return;
+                        const desk = document.createElement('div');
+                        desk.className = 'desk';
+                        desk.dataset.index = deskIndex;
+                        const x = groupStartX + deskCol * (deskWidth + innerSpacing);
+                        const y = rowStartY + deskRow * (deskHeight + innerSpacing);
+                        desk.style.left = x + 'px';
+                        desk.style.top = y + 'px';
+                        // 남녀모드 성별 패턴 적용: 왼쪽 남, 오른쪽 여
+                        if (this.appMode === 'gender') {
+                            desk.classList.add(deskCol === 0 ? 'desk-male' : 'desk-female');
+                        }
                         this.classroom.appendChild(desk);
                         this.desks.push({
                             element: desk,
@@ -424,76 +612,66 @@ class DeskManager {
     }
     
     randomizeSeats() {
-        // 입력 검증
         const validation = this.validateInput();
-        
-        if (this.inputMode === 'number') {
-            if (validation.actualAttendanceCount !== this.deskCount) {
-                this.showMessage('❌ 출석번호와 책상 개수가 일치하지 않습니다!', 'error');
+        if (this.appMode === 'gender') {
+            const { maleCount, femaleCount, maleDeskCount, femaleDeskCount } = validation;
+            if (maleCount !== maleDeskCount || femaleCount !== femaleDeskCount) {
+                this.showMessage('❌ 남학생/여학생 수와 책상 수가 일치하지 않습니다!', 'error');
                 return;
             }
-            
-            const { lastNumber, excludeNumbers } = validation;
-            
-            // 사용할 출석번호 배열 생성 (제외 번호 제외)
-            const availableNumbers = [];
-            for (let i = 1; i <= lastNumber; i++) {
-                if (!excludeNumbers.includes(i)) {
-                    availableNumbers.push(i);
-                }
+            const maleDesks = this.desks.filter(d => d.element.classList.contains('desk-male'));
+            const femaleDesks = this.desks.filter(d => d.element.classList.contains('desk-female'));
+            let males, females;
+            if (this.inputMode === 'number') {
+                males = this.maleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+                females = this.femaleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+            } else {
+                males = this.maleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                females = this.femaleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
             }
-            
-            // 배열을 섞기 (Fisher-Yates 알고리즘)
-            for (let i = availableNumbers.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [availableNumbers[i], availableNumbers[j]] = [availableNumbers[j], availableNumbers[i]];
-            }
-            
-            // 각 책상에 랜덤 숫자 할당
-            this.desks.forEach((desk, index) => {
-                desk.number = availableNumbers[index];
-                desk.element.textContent = availableNumbers[index];
-                desk.element.classList.add('assigned');
-                
-                // 애니메이션 효과를 위해 약간의 지연
-                setTimeout(() => {
-                    desk.element.classList.remove('assigned');
-                }, 600);
-            });
-            
-            // 성공 메시지
-            this.showMessage(`🎉 자리 배치가 완료되었습니다! (출석번호: ${availableNumbers.join(', ')})`, 'success');
-            
+            // 섞기
+            for (let i = males.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [males[i], males[j]] = [males[j], males[i]]; }
+            for (let i = females.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [females[i], females[j]] = [females[j], females[i]]; }
+            // 할당
+            maleDesks.forEach((desk, index) => { desk.element.textContent = males[index]; desk.element.classList.add('assigned'); setTimeout(() => desk.element.classList.remove('assigned'), 600); });
+            femaleDesks.forEach((desk, index) => { desk.element.textContent = females[index]; desk.element.classList.add('assigned'); setTimeout(() => desk.element.classList.remove('assigned'), 600); });
+            this.showMessage(`🎉 자리 배치가 완료되었습니다! (남:${males.length}명, 여:${females.length}명)`, 'success');
         } else {
-            // 이름 입력 방식
-            if (validation.count !== this.deskCount) {
-                this.showMessage('❌ 이름 개수와 책상 개수가 일치하지 않습니다!', 'error');
-                return;
+            // 일반 모드 자리배치
+            if (this.inputMode === 'number') {
+                const { lastNumber, excludeNumbers, actualAttendanceCount } = validation;
+                // 출석번호 목록 생성 (1~lastNumber 중 제외번호 빼고)
+                let numbers = [];
+                for (let i = 1; i <= lastNumber; i++) {
+                    if (!excludeNumbers.includes(i)) numbers.push(i);
+                }
+                // 섞기
+                for (let i = numbers.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [numbers[i], numbers[j]] = [numbers[j], numbers[i]];
+                }
+                // 책상에 할당
+                this.desks.forEach((desk, idx) => {
+                    desk.element.textContent = numbers[idx] !== undefined ? numbers[idx] : '';
+                    desk.element.classList.add('assigned');
+                    setTimeout(() => desk.element.classList.remove('assigned'), 600);
+                });
+                this.showMessage(`🎉 자리 배치가 완료되었습니다! (${numbers.length}명)`, 'success');
+            } else {
+                const { names } = validation;
+                // 섞기
+                for (let i = names.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [names[i], names[j]] = [names[j], names[i]];
+                }
+                // 책상에 할당
+                this.desks.forEach((desk, idx) => {
+                    desk.element.textContent = names[idx] !== undefined ? names[idx] : '';
+                    desk.element.classList.add('assigned');
+                    setTimeout(() => desk.element.classList.remove('assigned'), 600);
+                });
+                this.showMessage(`🎉 자리 배치가 완료되었습니다! (${names.length}명)`, 'success');
             }
-            
-            const { names } = validation;
-            
-            // 이름 배열을 섞기 (Fisher-Yates 알고리즘)
-            const shuffledNames = [...names];
-            for (let i = shuffledNames.length - 1; i > 0; i--) {
-                const j = Math.floor(Math.random() * (i + 1));
-                [shuffledNames[i], shuffledNames[j]] = [shuffledNames[j], shuffledNames[i]];
-            }
-            
-            // 각 책상에 랜덤 이름 할당
-            this.desks.forEach((desk, index) => {
-                desk.name = shuffledNames[index];
-                desk.element.textContent = shuffledNames[index];
-                desk.element.classList.add('assigned');
-                
-                // 애니메이션 효과를 위해 약간의 지연
-                setTimeout(() => {
-                    desk.element.classList.remove('assigned');
-                }, 600);
-            });
-            
-            // 성공 메시지
-            this.showMessage(`🎉 자리 배치가 완료되었습니다! (${shuffledNames.length}명 배치)`, 'success');
         }
     }
     
@@ -681,38 +859,30 @@ class DeskManager {
         this.isDraggingTeacherDesk = false;
     }
     
-    showMessage(text, type = 'info') {
-        // 기존 메시지 제거
-        const existingMessage = document.querySelector('.message');
-        if (existingMessage) {
-            existingMessage.remove();
+    showMessage(text, type = 'info', persistent = false) {
+        // 기존 메시지 제거 (단, persistent 경고는 유지)
+        if (!persistent) {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+        } else {
+            // 이미 같은 경고가 있으면 중복 생성 방지
+            const existingWarning = document.querySelector('.message.warning');
+            if (existingWarning && existingWarning.textContent === text) return;
         }
-        
         // 새 메시지 생성
         const message = document.createElement('div');
         message.className = `message ${type}`;
         message.textContent = text;
-        
         // 메시지 타입에 따른 색상 설정
         let backgroundColor, textColor;
         switch (type) {
-            case 'success':
-                backgroundColor = '#4caf50';
-                textColor = 'white';
-                break;
-            case 'warning':
-                backgroundColor = '#ff9800';
-                textColor = 'white';
-                break;
-            case 'error':
-                backgroundColor = '#f44336';
-                textColor = 'white';
-                break;
-            default:
-                backgroundColor = '#2196f3';
-                textColor = 'white';
+            case 'success': backgroundColor = '#4caf50'; textColor = 'white'; break;
+            case 'warning': backgroundColor = '#ff9800'; textColor = 'white'; break;
+            case 'error': backgroundColor = '#f44336'; textColor = 'white'; break;
+            default: backgroundColor = '#2196f3'; textColor = 'white';
         }
-        
         message.style.cssText = `
             position: fixed;
             top: 20px;
@@ -728,15 +898,15 @@ class DeskManager {
             max-width: 400px;
             word-wrap: break-word;
         `;
-        
         document.body.appendChild(message);
-        
-        // 5초 후 자동 제거 (경고/에러는 더 오래 표시)
-        const displayTime = (type === 'warning' || type === 'error') ? 5000 : 3000;
-        setTimeout(() => {
-            message.style.animation = 'slideOut 0.3s ease-in';
-            setTimeout(() => message.remove(), 300);
-        }, displayTime);
+        // 자동 제거: 경고/에러는 persistent가 아니면 5초, 그 외는 3초
+        if (!persistent) {
+            const displayTime = (type === 'warning' || type === 'error') ? 5000 : 3000;
+            setTimeout(() => {
+                message.style.animation = 'slideOut 0.3s ease-in';
+                setTimeout(() => message.remove(), 300);
+            }, displayTime);
+        }
     }
     
     repositionDesks() {
@@ -754,8 +924,11 @@ class DeskManager {
             case 'group':
                 this.repositionGroupLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset);
                 break;
-            case 'team':
-                this.repositionTeamLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset);
+            case 'team-vertical':
+                this.repositionTeamLayoutVertical(classroomRect, deskWidth, deskHeight, spacing, topOffset);
+                break;
+            case 'team-horizontal':
+                this.repositionTeamLayoutHorizontal(classroomRect, deskWidth, deskHeight, spacing, topOffset);
                 break;
         }
     }
@@ -830,29 +1003,64 @@ class DeskManager {
         }, 500);
     }
     
-    repositionTeamLayout(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
+    repositionTeamLayoutVertical(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
         const groupCols = 2;
         const groupRows = 2;
-        
-        // 모둠 내부 간격을 줄임
-        const innerSpacing = 10; // 모둠 내부 책상 간격
+        const innerSpacing = 10;
         const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
         const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
-        
-        // 모둠 간 간격을 늘림
-        const groupSpacing = 60; // 모둠 간 가로 간격
-        const rowSpacing = 80;   // 모둠 간 세로 간격
-        
+        const groupSpacing = 60;
+        const rowSpacing = 80;
         const groupsPerRow = 2;
-        const totalWidth = groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing;
-        const startX = (classroomRect.width - totalWidth) / 2;
+        const startX = (classroomRect.width - (groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing)) / 2;
         const startY = topOffset;
-        
         let deskIndex = 0;
-        
         for (let row = 0; row < 3; row++) {
             const rowStartY = startY + row * (groupHeight + rowSpacing);
             for (let groupInRow = 0; groupInRow < 2; groupInRow++) {
+                const groupStartX = startX + groupInRow * (groupWidth + groupSpacing);
+                for (let deskRow = 0; deskRow < groupRows; deskRow++) {
+                    for (let deskCol = 0; deskCol < groupCols; deskCol++) {
+                        const desk = this.desks[deskIndex];
+                        if (desk) {
+                            const x = groupStartX + deskCol * (deskWidth + innerSpacing);
+                            const y = rowStartY + deskRow * (deskHeight + innerSpacing);
+                            
+                            desk.element.style.transition = 'all 0.5s ease';
+                            desk.element.style.left = x + 'px';
+                            desk.element.style.top = y + 'px';
+                            
+                            desk.x = x;
+                            desk.y = y;
+                        }
+                        deskIndex++;
+                    }
+                }
+            }
+        }
+        
+        setTimeout(() => {
+            this.desks.forEach(desk => {
+                desk.element.style.transition = '';
+            });
+        }, 500);
+    }
+    
+    repositionTeamLayoutHorizontal(classroomRect, deskWidth, deskHeight, spacing, topOffset) {
+        const groupCols = 2;
+        const groupRows = 2;
+        const innerSpacing = 10;
+        const groupWidth = groupCols * deskWidth + (groupCols - 1) * innerSpacing;
+        const groupHeight = groupRows * deskHeight + (groupRows - 1) * innerSpacing;
+        const groupSpacing = 60;
+        const rowSpacing = 80;
+        const groupsPerRow = 3;
+        const startX = (classroomRect.width - (groupsPerRow * groupWidth + (groupsPerRow - 1) * groupSpacing)) / 2;
+        const startY = topOffset;
+        let deskIndex = 0;
+        for (let row = 0; row < 2; row++) {
+            const rowStartY = startY + row * (groupHeight + rowSpacing);
+            for (let groupInRow = 0; groupInRow < 3; groupInRow++) {
                 const groupStartX = startX + groupInRow * (groupWidth + groupSpacing);
                 for (let deskRow = 0; deskRow < groupRows; deskRow++) {
                     for (let deskCol = 0; deskCol < groupCols; deskCol++) {
@@ -885,22 +1093,39 @@ class DeskManager {
     addDeskContextMenuEvent(deskElement) {
         deskElement.addEventListener('contextmenu', (e) => {
             e.preventDefault();
-            // 최소 1개는 남기기
-            if (this.desks.length <= 1) {
-                this.showMessage('⚠️ 책상은 최소 1개는 남아야 합니다!', 'warning');
+            if (this.appMode === 'gender') {
+                if (deskElement.classList.contains('desk-male')) {
+                    deskElement.classList.remove('desk-male');
+                    deskElement.classList.add('desk-female');
+                } else if (deskElement.classList.contains('desk-female')) {
+                    // 삭제
+                    deskElement.remove();
+                    this.desks = this.desks.filter(d => d.element !== deskElement);
+                    this.deskCount = this.desks.length;
+                    this.validateInput();
+                    this.updateStatusInfo();
+                    return;
+                } else {
+                    deskElement.classList.add('desk-male');
+                }
+                this.validateInput();
+                this.updateStatusInfo();
                 return;
             }
-            deskElement.remove();
-            this.desks = this.desks.filter(d => d.element !== deskElement);
-            
-            // 남은 책상들의 dataset.index 업데이트
-            this.desks.forEach((desk, index) => {
-                desk.element.dataset.index = index;
-            });
-            
-            this.deskCount = this.desks.length;
-            this.validateInput();
-            this.updateStatusInfo();
+            // 일반 모드: 기존 삭제만
+            // ... 기존 코드 ...
+            if (this.appMode !== 'gender') {
+                // 최소 1개는 남기기
+                if (this.desks.length <= 1) {
+                    this.showMessage('⚠️ 책상은 최소 1개는 남아야 합니다!', 'warning');
+                    return;
+                }
+                deskElement.remove();
+                this.desks = this.desks.filter(d => d.element !== deskElement);
+                this.deskCount = this.desks.length;
+                this.validateInput();
+                this.updateStatusInfo();
+            }
         });
     }
 
@@ -961,6 +1186,9 @@ class DeskManager {
         const newDeskIndex = this.desks.length;
         const desk = document.createElement('div');
         desk.className = 'desk';
+        if (this.appMode === 'gender') {
+            desk.classList.add('desk-male');
+        }
         desk.dataset.index = newDeskIndex;
         desk.style.left = x + 'px';
         desk.style.top = y + 'px';
@@ -985,40 +1213,50 @@ class DeskManager {
 
     // 상태 정보 업데이트
     updateStatusInfo() {
-        // 요소가 없으면 업데이트하지 않음
-        if (!this.currentDeskCountElement || !this.currentStudentCountElement) {
-            console.warn('상태 정보 요소가 없어 업데이트를 건너뜁니다.');
-            return;
-        }
-        
-        // 책상 수 업데이트
-        this.currentDeskCountElement.textContent = this.deskCount;
-        
-        // 학생 수 계산 및 업데이트
-        let studentCount = 0;
-        if (this.inputMode === 'number') {
-            const lastNumber = parseInt(this.lastNumberInput.value) || 0;
-            const excludeText = this.excludeNumbersInput.value.trim();
-            let excludeNumbers = [];
-            if (excludeText) {
-                excludeNumbers = excludeText.split(',')
-                    .map(num => parseInt(num.trim()))
-                    .filter(num => !isNaN(num) && num > 0 && num <= lastNumber);
+        if (this.appMode === 'gender') {
+            // 남학생/여학생 수
+            let maleCount = 0, femaleCount = 0;
+            if (this.inputMode === 'number') {
+                const males = this.maleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+                const females = this.femaleNumbersInput.value.split(',').map(s => s.trim()).filter(s => s);
+                maleCount = males.length;
+                femaleCount = females.length;
+            } else {
+                const males = this.maleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                const females = this.femaleNamesInput.value.split(',').map(s => s.trim()).filter(s => s);
+                maleCount = males.length;
+                femaleCount = females.length;
             }
-            excludeNumbers = [...new Set(excludeNumbers)];
-            studentCount = lastNumber - excludeNumbers.length;
+            // 남/여 책상 수
+            const maleDeskCount = this.desks.filter(d => d.element.classList.contains('desk-male')).length;
+            const femaleDeskCount = this.desks.filter(d => d.element.classList.contains('desk-female')).length;
+            document.getElementById('currentMaleCount').textContent = maleCount;
+            document.getElementById('currentFemaleCount').textContent = femaleCount;
+            document.getElementById('currentMaleDeskCount').textContent = maleDeskCount;
+            document.getElementById('currentFemaleDeskCount').textContent = femaleDeskCount;
         } else {
-            const nameText = this.nameListTextarea.value.trim();
-            if (nameText) {
-                // 개행 또는 쉼표(,) 모두를 구분자로 사용
-                studentCount = nameText.split(/\n|,/).map(name => name.trim()).filter(name => name).length;
+            // 기존 일반 모드
+            // ... 기존 코드 ...
+            if (!this.currentDeskCountElement || !this.currentStudentCountElement) return;
+            let studentCount = 0;
+            if (this.inputMode === 'number') {
+                const lastNumber = parseInt(this.lastNumberInput.value) || 0;
+                const excludeText = this.excludeNumbersInput.value.trim();
+                let excludeNumbers = [];
+                if (excludeText) {
+                    excludeNumbers = excludeText.split(',').map(num => parseInt(num.trim())).filter(num => !isNaN(num) && num > 0 && num <= lastNumber);
+                }
+                excludeNumbers = [...new Set(excludeNumbers)];
+                studentCount = lastNumber - excludeNumbers.length;
+            } else {
+                const nameText = this.nameListTextarea.value.trim();
+                if (nameText) {
+                    studentCount = nameText.split(/\n|,/).map(name => name.trim()).filter(name => name).length;
+                }
             }
+            this.currentDeskCountElement.textContent = this.deskCount;
+            this.currentStudentCountElement.textContent = studentCount;
         }
-        
-        this.currentStudentCountElement.textContent = studentCount;
-        
-        // 디버깅: 업데이트 로그
-        console.log('상태 정보 업데이트:', { deskCount: this.deskCount, studentCount });
     }
 
     // PDF로 저장 기능
@@ -1052,6 +1290,119 @@ class DeskManager {
         const y = (pageHeight - imgHeight) / 2;
         pdf.addImage(imgData, 'PNG', 0, y, imgWidth, imgHeight);
         pdf.save('자리배치.pdf');
+    }
+
+    saveLayoutToStorage() {
+        const storageKey = this.appMode === 'gender' ? 'seatshuffleLayout_gender' : 'seatshuffleLayout';
+        const teacherDesk = this.teacherDesk ? { x: this.teacherDesk.x, y: this.teacherDesk.y } : null;
+        const desks = this.desks.map(desk => {
+            let gender = null;
+            if (this.appMode === 'gender') {
+                if (desk.element.classList.contains('desk-male')) gender = 'male';
+                else if (desk.element.classList.contains('desk-female')) gender = 'female';
+            }
+            return {
+                x: desk.x, y: desk.y,
+                number: desk.number, name: desk.name,
+                gender: gender
+            };
+        });
+        const layoutType = this.layoutType;
+        const layoutData = { teacherDesk, desks, layoutType };
+        localStorage.setItem(storageKey, JSON.stringify(layoutData));
+        this.showMessage('💾 현재 배치가 저장되었습니다!', 'success');
+    }
+
+    loadLayoutFromStorage() {
+        const storageKey = this.appMode === 'gender' ? 'seatshuffleLayout_gender' : 'seatshuffleLayout';
+        const data = localStorage.getItem(storageKey);
+        if (!data) {
+            this.showMessage('❌ 저장된 배치가 없습니다.', 'error');
+            return;
+        }
+        try {
+            const { teacherDesk, desks, layoutType } = JSON.parse(data);
+            this.layoutType = layoutType;
+            this.individualBtn.classList.toggle('active', layoutType === 'individual');
+            this.groupBtn.classList.toggle('active', layoutType === 'group');
+            this.teamVerticalBtn.classList.toggle('active', layoutType === 'team-vertical');
+            this.teamHorizontalBtn.classList.toggle('active', layoutType === 'team-horizontal');
+            this.classroom.querySelectorAll('.desk').forEach(d => d.remove());
+            this.desks = [];
+            if (this.teacherDesk && this.teacherDesk.element) this.teacherDesk.element.remove();
+            if (teacherDesk) {
+                const teacherDeskElement = document.createElement('div');
+                teacherDeskElement.className = 'teacher-desk';
+                teacherDeskElement.textContent = '👨‍🏫 교탁';
+                teacherDeskElement.dataset.type = 'teacher';
+                teacherDeskElement.style.left = teacherDesk.x + 'px';
+                teacherDeskElement.style.top = teacherDesk.y + 'px';
+                this.classroom.appendChild(teacherDeskElement);
+                this.teacherDesk = { element: teacherDeskElement, x: teacherDesk.x, y: teacherDesk.y };
+            } else {
+                this.teacherDesk = null;
+            }
+            desks.forEach((deskData, i) => {
+                const desk = document.createElement('div');
+                desk.className = 'desk';
+                if (this.appMode === 'gender' && deskData.gender) {
+                    desk.classList.add(deskData.gender === 'male' ? 'desk-male' : 'desk-female');
+                }
+                desk.dataset.index = i;
+                desk.style.left = deskData.x + 'px';
+                desk.style.top = deskData.y + 'px';
+                desk.textContent = deskData.number || deskData.name || '';
+                this.classroom.appendChild(desk);
+                this.desks.push({
+                    element: desk,
+                    x: deskData.x,
+                    y: deskData.y,
+                    number: deskData.number,
+                    name: deskData.name
+                });
+                this.addDeskContextMenuEvent(desk);
+            });
+            this.deskCount = this.desks.length;
+            this.validateInput();
+            this.updateStatusInfo();
+            this.showMessage('📂 저장된 배치를 불러왔습니다!', 'success');
+        } catch (e) {
+            this.showMessage('❌ 배치 불러오기 오류', 'error');
+            console.error('Layout loading error:', e);
+        }
+    }
+
+    toggleAppMode() {
+        this.appMode = this.appMode === 'normal' ? 'gender' : 'normal';
+        localStorage.setItem('seatshuffleAppMode', this.appMode);
+        this.updateModeToggleBtn();
+        // 새 모드에 맞게 전체 UI/데이터 리셋(추후 구현)
+        location.reload(); // 임시: 새로고침으로 전체 리셋(실제 구현시 UI만 교체)
+    }
+    updateModeToggleBtn() {
+        if (!this.modeToggleBtn) return;
+        if (this.appMode === 'normal') {
+            this.modeToggleBtn.textContent = '남녀 모드로 전환';
+            this.modeToggleBtn.classList.add('red');
+        } else {
+            this.modeToggleBtn.textContent = '일반 모드로 전환';
+            this.modeToggleBtn.classList.remove('red');
+        }
+    }
+
+    // 남녀 모드 출석번호 지우기
+    clearGenderNumbers() {
+        this.maleNumbersInput.value = '';
+        this.femaleNumbersInput.value = '';
+        this.validateInput();
+        this.showMessage('🗑️ 출석번호를 지웠습니다!', 'info');
+    }
+
+    saveGenderNumbersToStorage() {
+        const maleNumbers = this.maleNumbersInput.value.trim();
+        const femaleNumbers = this.femaleNumbersInput.value.trim();
+        localStorage.setItem('classroomNumbers_gender', JSON.stringify({ maleNumbers, femaleNumbers }));
+        this.showMessage('💾 남녀 출석번호가 저장되었습니다!', 'success');
     }
 }
 

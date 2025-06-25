@@ -195,7 +195,7 @@ h1 {
     font-size: 0.9em;
 }
 
-.number-input, .exclude-input {
+.number-input, .exclude-input, .name-input {
     padding: 8px 12px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
@@ -379,6 +379,16 @@ h1 {
     color: #757575;
 }
 
+.desk.desk-male {
+    background: linear-gradient(135deg, #2196f3 60%, #90caf9 100%);
+    border: 3px solid #1976d2;
+}
+
+.desk.desk-female {
+    background: linear-gradient(135deg, #f06292 60%, #f8bbd0 100%);
+    border: 3px solid #d81b60;
+}
+
 footer {
     text-align: center;
     margin-top: 20px;
@@ -389,6 +399,21 @@ footer {
 
 footer p {
     margin: 5px 0;
+    color: white;
+}
+
+.copyright {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid #e0e0e0;
+    text-align: center;
+}
+
+.copyright p {
+    margin: 0;
+    color: #999;
+    font-size: 0.85em;
+    font-style: italic;
 }
 
 /* 반응형 디자인 */
@@ -624,6 +649,16 @@ footer p {
     box-shadow: none !important;
 }
 
+.force-capture-desk.desk-male {
+    background: linear-gradient(135deg, #2196f3 60%, #90caf9 100%) !important;
+    border: 3px solid #1976d2 !important;
+}
+
+.force-capture-desk.desk-female {
+    background: linear-gradient(135deg, #f06292 60%, #f8bbd0 100%) !important;
+    border: 3px solid #d81b60 !important;
+}
+
 html.force-capture-bg,
 body.force-capture-bg {
     background: #fff !important;
@@ -647,4 +682,31 @@ body.force-capture-bg {
     background: linear-gradient(45deg, #ff1744, #ff5252);
     transform: translateY(-2px);
     box-shadow: 0 6px 20px rgba(255, 23, 68, 0.28);
+}
+
+.mode-toggle-btn {
+    padding: 8px 18px;
+    border: none;
+    border-radius: 20px;
+    background: linear-gradient(45deg, #2196f3, #4a90e2);
+    color: white;
+    font-weight: bold;
+    font-size: 1em;
+    box-shadow: 0 2px 8px rgba(33,150,243,0.15);
+    cursor: pointer;
+    transition: background 0.3s, transform 0.2s;
+}
+.mode-toggle-btn:hover {
+    background: linear-gradient(45deg, #1976d2, #4a90e2);
+    transform: scale(1.05);
+}
+
+.mode-toggle-btn.red {
+    background: linear-gradient(45deg, #ff5252, #ff1744);
+    color: white;
+    box-shadow: 0 2px 8px rgba(255,23,68,0.15);
+}
+.mode-toggle-btn.red:hover {
+    background: linear-gradient(45deg, #ff1744, #ff5252);
+    transform: scale(1.05);
 } 

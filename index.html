@@ -16,7 +16,7 @@
                 <h1>🎒 자리 바꾸기 🎒</h1>
                 <div class="header-info">
                     <div class="version-info">
-                        <div class="version">v0.2</div>
+                        <div class="version">v0.3</div>
                         <div class="developer">개발자: 키위맛초코</div>
                         <div class="email">kabigond23@gmail.com</div>
                     </div>
@@ -28,8 +28,18 @@
                     <div class="layout-buttons">
                         <button id="individualBtn" class="layout-btn active">👤 개인형</button>
                         <button id="groupBtn" class="layout-btn">👥 분단형</button>
-                        <button id="teamBtn" class="layout-btn">🏢 모둠형</button>
+                        <button id="teamVerticalBtn" class="layout-btn">🏢 모둠형 <br> (세로)</button>
+                        <button id="teamHorizontalBtn" class="layout-btn">🏢 모둠형 <br> (가로)</button>
                         <button id="addDeskBtn" class="add-desk-btn">➕ 책상 추가</button>
+                    </div>
+                    <div class="layout-save-buttons" style="margin-top:8px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button id="saveLayoutBtn" class="save-btn">💾 책상 배치 저장</button>
+                        <button id="loadLayoutBtn" class="load-btn">📂 책상 배치 불러오기</button>
+                    </div>
+                    <div class="layout-action-buttons" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap;">
+                        <button id="randomizeBtn" class="randomize-btn">🎲 자리 배치하기</button>
+                        <button id="resetBtn" class="reset-btn">🔄 초기화</button>
+                        <button id="downloadPdfBtn" class="pdf-btn">📄자리 배치 PDF로 저장</button>
                     </div>
                 </div>
                 
@@ -39,41 +49,73 @@
                         <button id="numberModeBtn" class="mode-btn active">📊 출석번호</button>
                         <button id="nameModeBtn" class="mode-btn">👥 이름</button>
                     </div>
+                    <div id="numberInputSection" class="attendance-input" style="margin-top:12px;">
+                        <div class="input-group">
+                            <label for="lastNumber">마지막 출석번호</label>
+                            <input type="number" id="lastNumber" min="1" max="50" value="20" class="number-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="excludeNumbers">제외할 출석번호</label>
+                            <input type="text" id="excludeNumbers" placeholder="예: 3,7,12" class="exclude-input">
+                            <small>쉼표로 구분하여 입력 (예: 3,7,12)</small>
+                        </div>
+                    </div>
+                    <div id="genderNumberInputSection" class="attendance-input" style="margin-top:12px; display:none;">
+                        <div class="input-group">
+                            <label for="maleNumbers">남자 출석번호</label>
+                            <input type="text" id="maleNumbers" placeholder="예: 1,2,3,7" class="number-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="femaleNumbers">여자 출석번호</label>
+                            <input type="text" id="femaleNumbers" placeholder="예: 4,5,6,8" class="number-input">
+                        </div>
+                        <small>각 입력란에 쉼표로 구분하여 입력하세요</small>
+                        <div class="name-controls" style="margin-top:8px;">
+                            <button id="saveGenderNumbersBtn" class="save-btn">💾 저장</button>
+                            <button id="clearGenderNumbersBtn" class="clear-btn">🗑️ 지우기</button>
+                        </div>
+                    </div>
+                    <div id="nameInputSection" class="attendance-input" style="display: none; margin-top:12px;">
+                        <div class="input-group">
+                            <label for="nameList">학생 이름 목록</label>
+                            <textarea id="nameList" placeholder="한 줄에 하나씩 또는 ,로 구분해서 입력하세요&#10;예:&#10;김철수&#10;이영희&#10;박민수&#10;또는&#10;김철수,이영희,박민수" class="name-textarea"></textarea>
+                            <small>한 줄에 하나씩 이름을 입력하세요<br>쉼표(,)로 구분해도 됩니다</small>
+                        </div>
+                        <div class="name-controls">
+                            <button id="saveNamesBtn" class="save-btn">💾 저장</button>
+                            <button id="clearNamesBtn" class="clear-btn">🗑️ 지우기</button>
+                        </div>
+                    </div>
+                    <div id="genderNameInputSection" class="attendance-input" style="display:none; margin-top:12px;">
+                        <div class="input-group">
+                            <label for="maleNames">남자 이름</label>
+                            <input type="text" id="maleNames" placeholder="예: 김철수,박민수" class="name-input">
+                        </div>
+                        <div class="input-group">
+                            <label for="femaleNames">여자 이름</label>
+                            <input type="text" id="femaleNames" placeholder="예: 이영희,최지우" class="name-input">
+                        </div>
+                        <small>각 입력란에 쉼표로 구분하여 입력하세요</small>
+                        <div class="name-controls" style="margin-top:8px;">
+                            <button id="saveGenderNamesBtn" class="save-btn">💾 저장</button>
+                            <button id="clearGenderNamesBtn" class="clear-btn">🗑️ 지우기</button>
+                        </div>
+                    </div>
                 </div>
-                
-                <div id="numberInputSection" class="attendance-input">
-                    <div class="input-group">
-                        <label for="lastNumber">마지막 출석번호</label>
-                        <input type="number" id="lastNumber" min="1" max="50" value="20" class="number-input">
-                    </div>
-                    <div class="input-group">
-                        <label for="excludeNumbers">제외할 출석번호</label>
-                        <input type="text" id="excludeNumbers" placeholder="예: 3,7,12" class="exclude-input">
-                        <small>쉼표로 구분하여 입력 (예: 3,7,12)</small>
-                    </div>
-                </div>
-                
-                <div id="nameInputSection" class="attendance-input" style="display: none;">
-                    <div class="input-group">
-                        <label for="nameList">학생 이름 목록</label>
-                        <textarea id="nameList" placeholder="한 줄에 하나씩 또는 ,로 구분해서 입력하세요&#10;예:&#10;김철수&#10;이영희&#10;박민수&#10;또는&#10;김철수,이영희,박민수" class="name-textarea"></textarea>
-                        <small>한 줄에 하나씩 이름을 입력하세요<br>쉼표(,)로 구분해도 됩니다</small>
-                    </div>
-                    <div class="name-controls">
-                        <button id="saveNamesBtn" class="save-btn">💾 저장</button>
-                        <button id="clearNamesBtn" class="clear-btn">🗑️ 지우기</button>
-                    </div>
-                </div>
-                
-                <button id="randomizeBtn" class="randomize-btn">🎲 자리 배치하기</button>
-                <button id="resetBtn" class="reset-btn">🔄 초기화</button>
-                <button id="downloadPdfBtn" class="pdf-btn">📄 PDF로 저장</button>
+            </div>
+            <div class="mode-toggle-bar" style="position:absolute; left:30px; top:30px; z-index:100;">
+                <button id="modeToggleBtn" class="mode-toggle-btn">남녀 모드로 전환</button>
             </div>
         </header>
         
-        <div class="status-info">
+        <div class="status-info" id="statusInfoNormal">
             <div class="desk-count">📚 책상: <span id="currentDeskCount">20</span>개</div>
             <div class="student-count">👥 학생: <span id="currentStudentCount">20</span>명</div>
+        </div>
+        
+        <div class="status-info" id="statusInfoGender" style="display:none;">
+            <div class="desk-count">🧑‍🦱 남학생: <span id="currentMaleCount">0</span>명 <br> 🧑‍🦱 책상(남): <span id="currentMaleDeskCount">0</span>개</div>
+            <div class="desk-count">👩 여학생: <span id="currentFemaleCount">0</span>명 <br> 👩 책상(여): <span id="currentFemaleDeskCount">0</span>개</div>
         </div>
         
         <main>
@@ -84,7 +126,11 @@
         
         <footer>
             <p>💡 마우스로 책상을 드래그해서 위치를 바꿀 수 있어요!</p>
-            <p>🗑️ 책상을 삭제하려면 마우스 우클릭하세요!</p>
+            <p id="footerNormal">🗑️ 책상을 삭제하려면 마우스 우클릭하세요!</p>
+            <p id="footerGender" style="display:none;">🧑‍🦱👩 책상을 우클릭하면 성별이 바뀌고, 🗑️ 두 번 우클릭하면 삭제됩니다!</p>
+            <div class="copyright">
+                <p>&copy; 2025 키위맛초코. All rights reserved.</p>
+            </div>
         </footer>
     </div>
     
