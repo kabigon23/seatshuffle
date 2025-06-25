@@ -613,10 +613,51 @@ class DeskManager {
     
     randomizeSeats() {
         const validation = this.validateInput();
+        
+        // 버튼 비활성화
+        this.randomizeBtn.disabled = true;
+        this.randomizeBtn.textContent = '✨ 마법 중... ✨';
+        
+        // 마법 효과 시작
+        this.startMagicEffect();
+        
+        // 2초 후 자리 배치 실행
+        setTimeout(() => {
+            this.executeSeatRandomization(validation);
+        }, 2000);
+    }
+    
+    startMagicEffect() {
+        // 모든 책상 내용 초기화
+        this.desks.forEach(desk => {
+            desk.element.textContent = '';
+            desk.number = null;
+            desk.name = null;
+        });
+        
+        // 교실에 마법 효과 적용
+        this.classroom.classList.add('magic-effect');
+        
+        // 모든 책상에 회전 효과 적용
+        this.desks.forEach(desk => {
+            desk.element.classList.add('magic-rotating');
+        });
+        
+        // 교탁에도 마법 효과 적용
+        if (this.teacherDesk && this.teacherDesk.element) {
+            this.teacherDesk.element.classList.add('magic-effect');
+        }
+        
+        // 마법 효과 메시지 표시
+        this.showMessage('✨ 마법이 시작됩니다... ✨', 'info');
+    }
+    
+    executeSeatRandomization(validation) {
         if (this.appMode === 'gender') {
             const { maleCount, femaleCount, maleDeskCount, femaleDeskCount } = validation;
             if (maleCount !== maleDeskCount || femaleCount !== femaleDeskCount) {
                 this.showMessage('❌ 남학생/여학생 수와 책상 수가 일치하지 않습니다!', 'error');
+                this.endMagicEffect();
                 return;
             }
             const maleDesks = this.desks.filter(d => d.element.classList.contains('desk-male'));
@@ -673,6 +714,32 @@ class DeskManager {
                 this.showMessage(`🎉 자리 배치가 완료되었습니다! (${names.length}명)`, 'success');
             }
         }
+        
+        // 마법 효과 종료
+        this.endMagicEffect();
+    }
+    
+    endMagicEffect() {
+        // 0.4초 후 마법 효과 제거 (책상 회전 애니메이션 완료 후)
+        setTimeout(() => {
+            // 교실 마법 효과 제거
+            this.classroom.classList.remove('magic-effect');
+            
+            // 책상 회전 효과 제거
+            this.desks.forEach(desk => {
+                desk.element.classList.remove('magic-rotating');
+            });
+            
+            // 교탁 마법 효과 제거
+            if (this.teacherDesk && this.teacherDesk.element) {
+                this.teacherDesk.element.classList.remove('magic-effect');
+            }
+            
+            // 버튼 복원
+            this.randomizeBtn.disabled = false;
+            this.randomizeBtn.textContent = '🎲 자리 배치하기';
+            
+        }, 400);
     }
     
     resetDesks() {

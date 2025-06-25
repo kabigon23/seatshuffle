@@ -709,4 +709,102 @@ body.force-capture-bg {
 .mode-toggle-btn.red:hover {
     background: linear-gradient(45deg, #ff1744, #ff5252);
     transform: scale(1.05);
+}
+
+/* 마법 효과 애니메이션 */
+@keyframes magic-sparkle {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+        transform: scale(1);
+    }
+    25% {
+        box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.9),
+                    0 0 40px 20px rgba(138, 43, 226, 0.7),
+                    0 0 60px 30px rgba(255, 20, 147, 0.5);
+        transform: scale(1.02);
+    }
+    50% {
+        box-shadow: 0 0 30px 15px rgba(255, 215, 0, 0.8),
+                    0 0 60px 30px rgba(138, 43, 226, 0.6),
+                    0 0 90px 45px rgba(255, 20, 147, 0.4);
+        transform: scale(1.05);
+    }
+    75% {
+        box-shadow: 0 0 20px 10px rgba(255, 215, 0, 0.9),
+                    0 0 40px 20px rgba(138, 43, 226, 0.7),
+                    0 0 60px 30px rgba(255, 20, 147, 0.5);
+        transform: scale(1.02);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7);
+        transform: scale(1);
+    }
+}
+
+@keyframes desk-magic-rotate {
+    0% {
+        transform: rotateY(0deg) scale(1);
+        opacity: 1;
+    }
+    25% {
+        transform: rotateY(90deg) scale(0.8);
+        opacity: 0.7;
+    }
+    50% {
+        transform: rotateY(180deg) scale(0.6);
+        opacity: 0.5;
+    }
+    75% {
+        transform: rotateY(270deg) scale(0.8);
+        opacity: 0.7;
+    }
+    100% {
+        transform: rotateY(360deg) scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes teacher-desk-magic {
+    0% {
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+    25% {
+        transform: scale(1.1) rotate(5deg);
+        filter: brightness(1.2) hue-rotate(30deg);
+    }
+    50% {
+        transform: scale(1.2) rotate(-5deg);
+        filter: brightness(1.4) hue-rotate(60deg);
+    }
+    75% {
+        transform: scale(1.1) rotate(5deg);
+        filter: brightness(1.2) hue-rotate(30deg);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        filter: brightness(1);
+    }
+}
+
+.classroom.magic-effect {
+    animation: magic-sparkle 2s ease-in-out;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(138, 43, 226, 0.1), rgba(255, 20, 147, 0.1));
+}
+
+.desk.magic-rotating {
+    animation: desk-magic-rotate 1.5s ease-in-out;
+    transform-style: preserve-3d;
+}
+
+.teacher-desk.magic-effect {
+    animation: teacher-desk-magic 2s ease-in-out;
+}
+
+/* 마법 효과 중 버튼 비활성화 */
+.randomize-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    background: linear-gradient(45deg, #ccc, #999);
 } 
