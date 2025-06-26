@@ -616,7 +616,7 @@ class DeskManager {
         
         // 버튼 비활성화
         this.randomizeBtn.disabled = true;
-        this.randomizeBtn.textContent = '✨ 마법 중... ✨';
+        this.randomizeBtn.textContent = '✨ 자리 배치중... ✨';
         
         // 마법 효과 시작
         this.startMagicEffect();
@@ -649,7 +649,7 @@ class DeskManager {
         }
         
         // 마법 효과 메시지 표시
-        this.showMessage('✨ 마법이 시작됩니다... ✨', 'info');
+        this.showMessage('✨ 자리 배치중입니다... ✨', 'info');
     }
     
     executeSeatRandomization(validation) {
